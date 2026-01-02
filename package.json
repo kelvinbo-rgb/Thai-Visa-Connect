@@ -1,0 +1,8 @@
+{
+  "name": "thai-visa-connect",
+  "version": "1.0.0",
+  "dependencies": {
+    "mongoose": "^7.0.0",
+    "node-fetch": "^3.3.0"
+  }
+}

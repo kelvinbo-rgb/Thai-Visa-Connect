@@ -839,10 +839,37 @@
             else box.value = "🛡️ Health Insurance for expats starting at 5,000 THB.";
         }
 
-        function sendBroadcast(e) {
+        async function sendBroadcast(e) {
             e.preventDefault();
-            showToast(`Sent to ${mockUsers.length} users`);
-            e.target.reset();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "Sending...";
+            btn.disabled = true;
+
+            const msg = document.getElementById('broadcast-msg').value;
+            
+            try {
+                // Call our new Backend API
+                const res = await fetch('/api/broadcast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg, target: 'all' })
+                });
+                const data = await res.json();
+                
+                if(data.success) {
+                    showToast(`Success! Sent to ${data.count} users.`);
+                    e.target.reset();
+                } else {
+                    showToast("Error sending broadcast");
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Network Error");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
 
         function changeLanguage(lang) {
