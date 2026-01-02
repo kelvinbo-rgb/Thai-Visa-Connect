@@ -256,7 +256,7 @@
                         <h3 class="font-bold text-sm mb-3" data-i18n="contactTitle">Alert Settings</h3>
                         <div class="space-y-3">
                             <div>
-                                <label class="text-xs text-gray-500 mb-1 block">Line User ID (Auto-Linked)</label>
+                                <label class="text-xs text-gray-500 mb-1 block" data-i18n="lineIdLabel">Line User ID (Auto-Linked)</label>
                                 <div class="flex">
                                     <div class="w-10 flex items-center justify-center bg-gray-200 rounded-l-lg border border-r-0 border-gray-300">
                                         <i class="fa-brands fa-line text-green-600"></i>
@@ -265,7 +265,7 @@
                                 </div>
                             </div>
                             <div>
-                                <label class="text-xs text-gray-500 mb-1 block">Phone (Emergency Call)</label>
+                                <label class="text-xs text-gray-500 mb-1 block" data-i18n="phoneLabel">Phone (Emergency Call)</label>
                                 <div class="flex">
                                     <div class="w-10 flex items-center justify-center bg-gray-200 rounded-l-lg border border-r-0 border-gray-300 text-sm">
                                         🇹🇭
@@ -332,11 +332,11 @@
 
                 <!-- Action Grid (Services) -->
                 <div class="grid grid-cols-2 gap-3">
-                    <button class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center space-y-2 active:bg-gray-50" onclick="simulateLinePush()">
+                    <button class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center space-y-2 active:bg-gray-50" onclick="navigateTo('services')">
                         <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
                              <i class="fa-solid fa-building-columns"></i>
                         </div>
-                        <span class="text-xs font-medium text-gray-600" data-i18n="srvBank">Bank Account</span>
+                        <span class="text-xs font-medium text-gray-600" data-i18n="srvBank">Services</span>
                     </button>
                     <button class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center space-y-2 active:bg-gray-50" onclick="navigateTo('onboarding')">
                         <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
@@ -344,6 +344,57 @@
                         </div>
                         <span class="text-xs font-medium text-gray-600" data-i18n="updateDocs">Update Docs</span>
                     </button>
+                </div>
+            </div>
+            
+            <!-- VIEW: Services (New!) -->
+            <div id="view-services" class="view-section p-4 pb-24">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                         <h2 class="text-2xl font-bold text-gray-900" data-i18n="servicesTitle">Premium Services</h2>
+                         <p class="text-xs text-gray-500" data-i18n="servicesDesc">We handle the paperwork for you.</p>
+                    </div>
+                    <button onclick="navigateTo('dashboard')" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-3">
+                    <!-- Service Item: Bank -->
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4 active:scale-[0.98] transition" onclick="openServiceModal('bank')">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <i class="fa-solid fa-building-columns text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-sm text-gray-900" data-i18n="srvBankTitle">Bank Account</h3>
+                            <p class="text-xs text-gray-500 mt-1" data-i18n="srvBankDesc">Bangkok Bank. No Work Permit required.</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
+
+                    <!-- Service Item: Visa -->
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4 active:scale-[0.98] transition" onclick="openServiceModal('visa')">
+                        <div class="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
+                            <i class="fa-solid fa-passport text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-sm text-gray-900" data-i18n="srvVisaTitle">Visa Extension</h3>
+                            <p class="text-xs text-gray-500 mt-1" data-i18n="srvVisaDesc">Hassle-free extension service.</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
+
+                    <!-- Service Item: Insurance -->
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4 active:scale-[0.98] transition" onclick="openServiceModal('insurance')">
+                        <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
+                            <i class="fa-solid fa-heart-pulse text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-sm text-gray-900" data-i18n="srvInsTitle">Health Insurance</h3>
+                            <p class="text-xs text-gray-500 mt-1" data-i18n="srvInsDesc">Valid for Visa requirements.</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                    </div>
                 </div>
             </div>
 
@@ -449,6 +500,10 @@
                 <i class="fa-solid fa-house text-xl mb-1"></i>
                 <span data-i18n="navHome">Home</span>
             </button>
+            <button class="flex flex-col items-center justify-center w-full h-full hover:text-blue-600 transition" onclick="navigateTo('services')">
+                 <i class="fa-solid fa-layer-group text-xl mb-1"></i>
+                 <span data-i18n="navServices">Services</span>
+            </button>
             <button class="flex flex-col items-center justify-center w-full h-full hover:text-blue-600 transition" onclick="navigateTo('onboarding')">
                 <i class="fa-solid fa-file-pen text-xl mb-1"></i>
                 <span data-i18n="navEdit">Edit</span>
@@ -458,9 +513,9 @@
     </div>
 
     <!-- Notification Toast -->
-    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-gray-800/90 backdrop-blur text-white px-6 py-3 rounded-full shadow-2xl z-[100] transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none flex items-center space-x-2">
+    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-gray-800/90 backdrop-blur text-white px-6 py-3 rounded-full shadow-2xl z-[100] transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none flex items-center space-x-2 w-max max-w-[90%]">
         <i class="fa-solid fa-circle-check text-green-400"></i>
-        <span id="toast-msg" class="text-sm font-medium">Notification Sent</span>
+        <span id="toast-msg" class="text-sm font-medium truncate">Notification Sent</span>
     </div>
     
     <!-- PWA Install Prompt (Smart Detection) -->
@@ -481,14 +536,8 @@
 
     <script>
         // ==========================================
-        // CONFIGURATION & DATABASE NOTES
+        // CONFIGURATION
         // ==========================================
-        // For Production (Vercel/Line/MongoDB):
-        // 1. Replace `localStorage` calls with `fetch('/api/user')`.
-        // 2. Configure Line Login Channel in Developer Console.
-        // 3. User `liff.init({ liffId: "YOUR_ID" })` for real User ID.
-        // ==========================================
-        
         const LIFF_ID = "YOUR_LIFF_ID_HERE"; 
         
         // Mock Backend Data (Admin View)
@@ -521,6 +570,8 @@
                 statusReport: "Detects next due date",
                 btnScan: "Scan",
                 contactTitle: "Alert Settings",
+                lineIdLabel: "Line User ID (Auto-Linked)",
+                phoneLabel: "Phone (Emergency Call)",
                 btnActivate: "Activate Reminders",
                 dashTitle: "My Status",
                 statusActive: "Active",
@@ -528,13 +579,22 @@
                 dashVisa: "Visa Expiry",
                 remaining: "Remaining",
                 days: "Days",
-                srvBank: "Bank Account",
+                srvBank: "Services",
                 updateDocs: "Update Docs",
                 adminTitle: "Admin Dashboard",
                 broadcastTitle: "Marketing Broadcast",
                 userTable: "Recent Users",
                 navHome: "Home",
-                navEdit: "Edit"
+                navServices: "Services",
+                navEdit: "Edit",
+                servicesTitle: "Premium Services",
+                servicesDesc: "We handle the paperwork for you.",
+                srvBankTitle: "Bank Account",
+                srvBankDesc: "Bangkok Bank. No Work Permit required.",
+                srvVisaTitle: "Visa Extension",
+                srvVisaDesc: "Hassle-free extension service.",
+                srvInsTitle: "Health Insurance",
+                srvInsDesc: "Valid for Visa requirements."
             },
             zh: {
                 appName: "泰签管家<br>Thai Visa",
@@ -556,6 +616,8 @@
                 statusReport: "自动计算下次报到日",
                 btnScan: "扫描",
                 contactTitle: "通知设置",
+                lineIdLabel: "Line 用户 ID (自动关联)",
+                phoneLabel: "电话号码 (紧急联系)",
                 btnActivate: "开启管家服务",
                 dashTitle: "我的状态",
                 statusActive: "监控中",
@@ -563,13 +625,22 @@
                 dashVisa: "签证有效期",
                 remaining: "剩余天数",
                 days: "天",
-                srvBank: "银行/保险",
+                srvBank: "综合服务",
                 updateDocs: "更新资料",
                 adminTitle: "管理后台",
                 broadcastTitle: "营销广播",
                 userTable: "最新用户",
                 navHome: "首页",
-                navEdit: "编辑"
+                navServices: "服务",
+                navEdit: "编辑",
+                servicesTitle: "增值服务",
+                servicesDesc: "为您处理繁琐的文书工作",
+                srvBankTitle: "银行开户",
+                srvBankDesc: "盘谷银行开户，无需工作证",
+                srvVisaTitle: "签证续签",
+                srvVisaDesc: "无忧跑腿续签服务",
+                srvInsTitle: "医疗保险",
+                srvInsDesc: "符合移民局签证要求"
             }
         };
 
@@ -628,7 +699,7 @@
             setTimeout(() => {
                 // Mock Success
                 const mockProfile = {
-                    userId: "U8372648592" + Math.floor(Math.random()*1000),
+                    userId: "U" + Math.random().toString(36).substr(2, 10).toUpperCase(),
                     displayName: "John Line",
                 };
                 
@@ -639,7 +710,7 @@
                 navigateTo('onboarding');
                 showToast(currentLang === 'en' ? "Connected to Line" : "Line 连接成功");
                 btn.innerHTML = originalContent; // Reset button
-            }, 1000);
+            }, 1500);
         }
 
         function navigateTo(viewId, animate = true) {
@@ -669,14 +740,20 @@
             if (viewId === 'onboarding') {
                 actionBar.classList.remove('hidden');
                 tabBar.classList.add('hidden');
-            } else if (viewId === 'dashboard') {
+            } else if (viewId === 'dashboard' || viewId === 'services') {
                 actionBar.classList.add('hidden');
                 tabBar.classList.remove('hidden');
-                updateDashboardUI();
+                if(viewId === 'dashboard') updateDashboardUI();
             } else {
                 actionBar.classList.add('hidden');
                 tabBar.classList.add('hidden');
             }
+            
+            // Tab active state
+            document.querySelectorAll('#tab-bar button').forEach(btn => btn.classList.remove('text-blue-600'));
+            if(viewId === 'dashboard') document.querySelectorAll('#tab-bar button')[0].classList.add('text-blue-600');
+            if(viewId === 'services') document.querySelectorAll('#tab-bar button')[1].classList.add('text-blue-600');
+            if(viewId === 'onboarding') document.querySelectorAll('#tab-bar button')[2].classList.add('text-blue-600');
         }
 
         // ==========================================
@@ -704,7 +781,7 @@
                     status.classList.add('text-green-600', 'font-bold');
 
                     // 3. Mock Data Result
-                    inputContainer.classList.remove('hidden');
+                    if(inputContainer) inputContainer.classList.remove('hidden');
                     const today = new Date();
                     
                     if (type === 'passport') {
@@ -715,7 +792,7 @@
                     } else if (type === 'visa') {
                         const d = new Date(today.setDate(today.getDate() + 120));
                         document.getElementById('date-visa').value = d.toISOString().split('T')[0];
-                        showToast("Expiry: " + d.toISOString().split('T')[0]);
+                        showToast(currentLang === 'en' ? "Expiry detected" : "有效期已识别");
                     } else {
                         const d = new Date(today.setDate(today.getDate() + 24));
                         document.getElementById('date-report').value = d.toISOString().split('T')[0];
@@ -758,7 +835,7 @@
         }
 
         // ==========================================
-        // DASHBOARD UTILS
+        // SERVICES & DASHBOARD
         // ==========================================
 
         function updateDashboardUI() {
@@ -783,9 +860,13 @@
             }
         }
 
-        function simulateLinePush() {
-            // In production, this calls your API -> Line Messaging API
-            showToast(currentLang === 'en' ? "Opening Bank Service..." : "正在转接银行开户服务...");
+        function openServiceModal(type) {
+            // This would open a form or trigger a Line Intent
+            // For now, we simulate a request sent to Admin
+            showToast(currentLang === 'en' ? "Opening Service Request..." : "正在发起服务申请...");
+            setTimeout(() => {
+                showToast(currentLang === 'en' ? "Request Sent to Admin!" : "申请已发送给管理员！");
+            }, 1000);
         }
 
         // ==========================================
