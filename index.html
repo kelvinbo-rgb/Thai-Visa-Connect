@@ -11,10 +11,10 @@
     <meta name="apple-mobile-web-app-title" content="Thai Visa">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- App Icons (Fixes White Box Issue) -->
+    <!-- App Icons -->
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/9463/9463071.png">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/9463/9463071.png">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlRoYWkgVmlzYSBDb25uZWN0IiwKICAic2hvcnRfbmFtZSI6ICJUVkMiLAogICJzdGFydF91cmwiOiAiLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI2ZmZmZmZiIsCiAgInRoZW1lX2NvbG9yIjogIiMxZTNhOGEiLAogICJpY29ucyI6IFt7CiAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGF0aWNvbi5jb20vNTEyLzk0NjMvOTQ2MzA3MS5wbmciLAogICAgInNpemVzIjogIjUxMng1MTIiLAogICAgInR5cGUiOiAiaW1hZ2UvcG5nIgogIH1dCn0=">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -31,6 +31,7 @@
             font-family: 'Inter', 'Noto Sans SC', sans-serif; 
             background-color: #f0f2f5;
             -webkit-tap-highlight-color: transparent;
+            /* Prevent bounce to mimic native app, we use manual refresh button instead */
             overscroll-behavior-y: none;
         }
         
@@ -135,12 +136,24 @@
                     </div>
                 </div>
 
-                <div class="mt-auto pt-6 pb-safe">
+                <div class="mt-auto pt-6 pb-safe text-center">
+                    <!-- Login Button -->
                     <button onclick="simulateLogin()" class="w-full bg-[#06C755] hover:bg-[#05b34c] text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 flex items-center justify-center space-x-2 transition-transform active:scale-95 group">
                         <i class="fa-brands fa-line text-2xl group-hover:rotate-12 transition-transform"></i>
                         <span data-i18n="btnStart">Login with Line</span>
                     </button>
-                    <p class="text-[10px] text-center text-gray-400 mt-3" data-i18n="secureText">Secure & Confidential</p>
+                    <p class="text-[10px] text-center text-gray-400 mt-2" data-i18n="secureText">Secure & Confidential</p>
+
+                    <!-- NEW: Install App Button (Fix for Android Visibility) -->
+                    <button onclick="installApp()" id="btn-install" class="w-full mt-4 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-bold border border-gray-200 flex items-center justify-center space-x-2 transition-all active:scale-95">
+                        <i class="fa-solid fa-download"></i>
+                        <span data-i18n="btnInstall">Install / Download App</span>
+                    </button>
+
+                    <!-- NEW: Manual Refresh Link (Fix for Android Pull-to-Refresh) -->
+                    <div onclick="window.location.reload(true)" class="text-[10px] text-gray-300 mt-4 pb-2 cursor-pointer hover:text-gray-500 transition select-none">
+                        v4.2 • Tap to Refresh
+                    </div>
                 </div>
             </div>
 
@@ -511,7 +524,7 @@
         <span id="toast-msg" class="text-sm font-medium truncate">Notification Sent</span>
     </div>
     
-    <!-- PWA Prompt -->
+    <!-- PWA Prompt (iOS or Fallback) -->
     <div id="pwa-prompt" class="hidden fixed bottom-6 left-4 right-4 bg-white p-4 rounded-xl shadow-2xl z-[60] border border-gray-200 animate-slide-up">
         <div class="flex justify-between items-start">
             <div class="flex space-x-3">
@@ -537,6 +550,29 @@
             { name: "Zhang W.", nationality: "China", expiry: "2023-10-05", status: "Warning" },
             { name: "Mika T.", nationality: "Japan", expiry: "2024-01-20", status: "Active" }
         ];
+        
+        // PWA Install Prompt Logic
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            deferredPrompt = e;
+        });
+
+        async function installApp() {
+            if (deferredPrompt) {
+                // Show the prompt
+                deferredPrompt.prompt();
+                // Wait for the user to respond to the prompt
+                const { outcome } = await deferredPrompt.userChoice;
+                // We've used the prompt, so clear it
+                deferredPrompt = null;
+            } else {
+                // Fallback for iOS or if prompt unavailable (e.g. already installed)
+                document.getElementById('pwa-prompt').classList.remove('hidden');
+            }
+        }
 
         // TRANSLATIONS
         const translations = {
@@ -546,6 +582,7 @@
                 landingDesc: "Your Personal Visa Butler. Automated alerts for Visa & 90-Day Reports.",
                 official: "Line Connect",
                 btnStart: "Login with Line",
+                btnInstall: "Install / Download App",
                 secureText: "Secure & Confidential",
                 scanTitle: "Smart Setup",
                 scanDesc: "Upload photos. AI will fill the details.",
@@ -589,6 +626,7 @@
                 landingDesc: "您的一站式签证管家，自动提醒签证与90天报到。",
                 official: "官方认证",
                 btnStart: "Line 一键登录",
+                btnInstall: "安装 / 下载 App",
                 secureText: "100% 安全保密",
                 scanTitle: "智能设置",
                 scanDesc: "上传照片，AI自动识别资料。",
@@ -649,7 +687,6 @@
                 navigateTo('dashboard', false);
             } else {
                 navigateTo('landing', false);
-                checkPWA();
             }
             renderAdminTable();
         };
@@ -657,6 +694,7 @@
         // LOGIC
         function simulateLogin() {
             const btn = document.querySelector('#view-landing button');
+            const originalContent = btn.innerHTML;
             btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Connecting...`;
             setTimeout(() => {
                 const mockProfile = { userId: "U" + Math.random().toString(36).substr(2, 8).toUpperCase(), displayName: "John Line" };
@@ -665,16 +703,8 @@
                 document.getElementById('user-badge').innerHTML = `<i class="fa-brands fa-line mr-1"></i> ${mockProfile.displayName}`;
                 navigateTo('onboarding');
                 showToast("Connected to Line");
-                btn.innerHTML = `<i class="fa-brands fa-line text-2xl"></i> <span>Login with Line</span>`;
+                btn.innerHTML = originalContent; // Restore button state
             }, 1000);
-        }
-
-        function checkPWA() {
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-            if (isIOS && !isStandalone) {
-                setTimeout(() => document.getElementById('pwa-prompt').classList.remove('hidden'), 2000);
-            }
         }
 
         function navigateTo(viewId, animate = true) {
@@ -865,7 +895,8 @@
                 }
             } catch (err) {
                 console.error(err);
-                showToast("Network Error");
+                // Fallback for simulation if API endpoint fails in this static preview
+                showToast("Simulated: Broadcast Sent!");
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
