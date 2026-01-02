@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Thai Visa Connect</title>
+    
+    <!-- PWA / Mobile Web App Meta Tags -->
+    <meta name="theme-color" content="#1e3a8a"> <!-- Matches blue-900 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Thai Visa">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/sprites/solid.svg"> 
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Line LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+    <style>
+        body { 
+            font-family: 'Inter', 'Noto Sans SC', sans-serif; 
+            background-color: #f0f2f5;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+        }
+        
+        /* Smooth View Transitions */
+        .view-section {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .view-active {
+            display: block;
+            opacity: 1;
+        }
+        
+        /* Scan Line Animation */
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #3b82f6;
+            box-shadow: 0 0 15px #3b82f6;
+            animation: scan 2s linear infinite;
+            display: none;
+            z-index: 10;
+        }
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .scanning .scan-line { display: block; }
+
+        /* iOS Safe Area */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+        
+        /* Hide Scrollbar but keep functionality */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Animation for PWA Prompt */
+        @keyframes slide-up {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up { animation: slide-up 0.5s ease-out forwards; }
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
+    </style>
+</head>
+<body class="text-gray-800 h-screen overflow-hidden flex flex-col">
+
+    <!-- App Container (Mobile Width Constrained on Desktop) -->
+    <div id="app" class="w-full max-w-md mx-auto bg-gray-50 h-full flex flex-col relative shadow-2xl">
+        
+        <!-- Navbar -->
+        <nav class="bg-blue-900 text-white pt-safe pb-3 px-4 flex justify-between items-center shadow-lg z-50 shrink-0">
+            <div class="flex items-center space-x-2" onclick="navigateTo('landing')">
+                <div class="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center border border-blue-700">
+                    <i class="fa-solid fa-passport text-yellow-400"></i>
+                </div>
+                <h1 class="font-bold text-sm tracking-wide leading-tight" data-i18n="appName">Thai Visa<br>Connect</h1>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <!-- Language Toggle -->
+                <div class="bg-blue-950/50 p-1 rounded-lg flex border border-blue-800">
+                    <button onclick="changeLanguage('en')" id="btn-en" class="text-[10px] font-bold px-3 py-1 bg-blue-600 rounded text-white shadow transition-all">EN</button>
+                    <button onclick="changeLanguage('zh')" id="btn-zh" class="text-[10px] font-medium px-3 py-1 text-blue-300 hover:text-white transition-all">中文</button>
+                </div>
+                <!-- Admin Button -->
+                <button onclick="toggleAdmin()" class="w-8 h-8 rounded-full bg-blue-800 flex items-center justify-center text-blue-200 hover:text-white hover:bg-blue-700 transition">
+                    <i class="fa-solid fa-shield-halved text-xs"></i>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Scrollable Main Content -->
+        <main class="flex-grow overflow-y-auto no-scrollbar relative bg-white">
+            
+            <!-- VIEW: Landing Page -->
+            <div id="view-landing" class="view-section view-active h-full flex flex-col p-6">
+                <div class="flex-grow flex flex-col items-center justify-center text-center space-y-6">
+                    <div class="relative">
+                        <div class="w-24 h-24 bg-blue-50 rounded-3xl flex items-center justify-center mb-2 shadow-inner">
+                            <i class="fa-solid fa-clock-rotate-left text-6xl text-blue-600"></i>
+                        </div>
+                        <div class="absolute -bottom-2 -right-2 bg-[#06C755] text-white text-xs px-2 py-1 rounded-full shadow border-2 border-white flex items-center gap-1">
+                            <i class="fa-brands fa-line"></i> <span data-i18n="official">Line Connect</span>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <h2 class="text-2xl font-bold text-gray-900 leading-tight" data-i18n="landingTitle">Your Thai Visa Butler</h2>
+                        <p class="text-gray-500 text-sm px-4" data-i18n="landingDesc">One-stop management for Visa, 90-Day, Bank Accounts & More.</p>
+                    </div>
+
+                    <!-- Feature Pills -->
+                    <div class="flex flex-wrap justify-center gap-2 w-full mt-4">
+                        <div class="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
+                            <i class="fa-solid fa-bell text-blue-500"></i>
+                            <span class="text-xs font-medium text-gray-600" data-i18n="featLine">Line Alert</span>
+                        </div>
+                        <div class="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
+                            <i class="fa-solid fa-building-columns text-purple-500"></i>
+                            <span class="text-xs font-medium text-gray-600" data-i18n="featBank">Services</span>
+                        </div>
+                        <div class="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
+                            <i class="fa-solid fa-wand-magic-sparkles text-orange-500"></i>
+                            <span class="text-xs font-medium text-gray-600" data-i18n="featAI">AI Scan</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Call to Action -->
+                <div class="mt-auto pt-6 pb-safe">
+                    <button onclick="startApp()" class="w-full bg-[#06C755] hover:bg-[#05b34c] text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 flex items-center justify-center space-x-2 transition-transform active:scale-95 group">
+                        <i class="fa-brands fa-line text-2xl group-hover:rotate-12 transition-transform"></i>
+                        <span data-i18n="btnStart">Login with Line</span>
+                    </button>
+                    <p class="text-[10px] text-center text-gray-400 mt-3" data-i18n="secureText">100% Secure. We never share your data.</p>
+                </div>
+            </div>
+
+            <!-- VIEW: Onboarding (Scanner) -->
+            <div id="view-onboarding" class="view-section pb-32 p-4">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900" data-i18n="scanTitle">Smart Setup</h2>
+                        <p class="text-xs text-gray-500" data-i18n="scanDesc">Upload photos. AI will fill the details.</p>
+                    </div>
+                    <div class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold" id="user-badge">
+                        <i class="fa-solid fa-user mr-1"></i> Guest
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Card 0: Passport (New!) -->
+                    <div class="relative bg-white border border-gray-200 rounded-2xl p-4 shadow-sm overflow-hidden group transition-all" id="card-passport">
+                        <div class="scan-line"></div>
+                        <div class="flex items-start space-x-4">
+                            <div class="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-600 shrink-0">
+                                <i class="fa-solid fa-address-card text-xl"></i>
+                            </div>
+                            <div class="flex-grow min-w-0">
+                                <h3 class="font-bold text-sm text-gray-800" data-i18n="cardPassport">Passport Bio</h3>
+                                <div id="passport-display-area">
+                                    <p class="text-xs text-gray-400 mt-1" id="status-passport" data-i18n="statusPassport">Auto-detect Name & Nationality</p>
+                                </div>
+                            </div>
+                            <label class="shrink-0 bg-gray-900 text-white px-4 py-2 rounded-lg text-xs font-bold cursor-pointer hover:bg-gray-800 active:scale-95 transition">
+                                <i class="fa-solid fa-camera mr-1"></i> <span data-i18n="btnScan">Scan</span>
+                                <input type="file" class="hidden" accept="image/*" capture="environment" onchange="handleScan(this, 'passport')">
+                            </label>
+                        </div>
+                        <div id="input-passport-container" class="hidden mt-3 pt-3 border-t border-gray-100 animate-fade-in space-y-2">
+                             <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Nationality</label>
+                                    <input type="text" id="val-nationality" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs font-semibold">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Passport No.</label>
+                                    <input type="text" id="val-passport" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs font-semibold">
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 1: Visa -->
+                    <div class="relative bg-white border border-gray-200 rounded-2xl p-4 shadow-sm overflow-hidden group transition-all" id="card-visa">
+                        <div class="scan-line"></div>
+                        <div class="flex items-start space-x-4">
+                            <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 shrink-0">
+                                <i class="fa-solid fa-stamp text-xl"></i>
+                            </div>
+                            <div class="flex-grow min-w-0">
+                                <h3 class="font-bold text-sm text-gray-800" data-i18n="cardVisa">Visa Stamp</h3>
+                                <div id="visa-display-area">
+                                    <p class="text-xs text-gray-400 mt-1" id="status-visa" data-i18n="statusVisa">Tap scan to detect expiry</p>
+                                </div>
+                            </div>
+                            <label class="shrink-0 bg-gray-900 text-white px-4 py-2 rounded-lg text-xs font-bold cursor-pointer hover:bg-gray-800 active:scale-95 transition">
+                                <i class="fa-solid fa-camera mr-1"></i> <span data-i18n="btnScan">Scan</span>
+                                <input type="file" class="hidden" accept="image/*" capture="environment" onchange="handleScan(this, 'visa')">
+                            </label>
+                        </div>
+                        <!-- Hidden Input Revealed after scan -->
+                        <div id="input-visa-container" class="hidden mt-3 pt-3 border-t border-gray-100 animate-fade-in">
+                            <label class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Detected Date</label>
+                            <input type="date" id="date-visa" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Card 2: 90 Day -->
+                    <div class="relative bg-white border border-gray-200 rounded-2xl p-4 shadow-sm overflow-hidden" id="card-report">
+                        <div class="scan-line"></div>
+                        <div class="flex items-start space-x-4">
+                            <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
+                                <i class="fa-solid fa-file-invoice text-xl"></i>
+                            </div>
+                            <div class="flex-grow min-w-0">
+                                <h3 class="font-bold text-sm text-gray-800" data-i18n="cardReport">90-Day Slip</h3>
+                                <div id="report-display-area">
+                                    <p class="text-xs text-gray-400 mt-1" id="status-report" data-i18n="statusReport">Detects next due date</p>
+                                </div>
+                            </div>
+                            <label class="shrink-0 bg-gray-900 text-white px-4 py-2 rounded-lg text-xs font-bold cursor-pointer hover:bg-gray-800 active:scale-95 transition">
+                                <i class="fa-solid fa-camera mr-1"></i> <span data-i18n="btnScan">Scan</span>
+                                <input type="file" class="hidden" accept="image/*" capture="environment" onchange="handleScan(this, 'report')">
+                            </label>
+                        </div>
+                        <div id="input-report-container" class="hidden mt-3 pt-3 border-t border-gray-100 animate-fade-in">
+                            <label class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Detected Date</label>
+                            <input type="date" id="date-report" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Contact Info (Line auto-filled) -->
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <h3 class="font-bold text-sm mb-3" data-i18n="contactTitle">Alert Settings</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">Line User ID (Auto-Linked)</label>
+                                <div class="flex">
+                                    <div class="w-10 flex items-center justify-center bg-gray-200 rounded-l-lg border border-r-0 border-gray-300">
+                                        <i class="fa-brands fa-line text-green-600"></i>
+                                    </div>
+                                    <input type="text" id="line-id" placeholder="Waiting for login..." class="flex-1 bg-white border border-gray-300 rounded-r-lg px-3 py-2 text-sm text-gray-600" readonly>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">Phone (Emergency Call)</label>
+                                <div class="flex">
+                                    <div class="w-10 flex items-center justify-center bg-gray-200 rounded-l-lg border border-r-0 border-gray-300 text-sm">
+                                        🇹🇭
+                                    </div>
+                                    <input type="tel" id="phone-number" placeholder="081 234 5678" class="flex-1 bg-white border border-gray-300 rounded-r-lg px-3 py-2 text-sm focus:border-blue-500 outline-none">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: Dashboard -->
+            <div id="view-dashboard" class="view-section p-5 pb-24">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" data-i18n="dashTitle">My Status</h2>
+                        <p class="text-xs text-gray-500" id="dash-last-update">Updated: Just now</p>
+                    </div>
+                    <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider border border-green-200 flex items-center gap-1">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> <span data-i18n="statusActive">Active</span>
+                    </span>
+                </div>
+
+                <!-- 90 Day Card -->
+                <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 text-white shadow-xl shadow-blue-200 mb-5 relative overflow-hidden transform transition hover:scale-[1.01]">
+                    <!-- Background Pattern -->
+                    <div class="absolute -right-6 -top-6 opacity-10 rotate-12">
+                        <i class="fa-solid fa-file-invoice text-[120px]"></i>
+                    </div>
+                    
+                    <div class="relative z-10">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="bg-blue-500/30 backdrop-blur-sm p-2 rounded-lg">
+                                <i class="fa-regular fa-clock text-xl"></i>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-blue-100 text-xs font-medium" data-i18n="dashReport">90-Day Report</p>
+                                <p class="text-[10px] text-blue-200 opacity-80" id="dash-report-date">Due: --/--/----</p>
+                            </div>
+                        </div>
+                        <h3 class="text-4xl font-bold mb-1 tracking-tight" id="dash-report-days">-- Days</h3>
+                        <p class="text-sm text-blue-100" data-i18n="remaining">Remaining</p>
+                        
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-black/20 rounded-full h-1.5 mt-6">
+                            <div class="bg-yellow-400 h-1.5 rounded-full shadow-[0_0_10px_rgba(250,204,21,0.5)]" style="width: 75%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visa Card -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-lg mb-6 relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-gray-400 text-xs font-bold uppercase tracking-wider" data-i18n="dashVisa">Visa Expiry</p>
+                        <i class="fa-solid fa-passport text-gray-300 text-xl"></i>
+                    </div>
+                    <div class="flex items-baseline space-x-2">
+                        <h3 class="text-3xl font-bold text-gray-800" id="dash-visa-days">--</h3>
+                        <span class="text-sm text-gray-500" data-i18n="days">Days</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1" id="dash-visa-date">Expires: --/--/----</p>
+                </div>
+
+                <!-- Action Grid (Services) -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center space-y-2 active:bg-gray-50" onclick="simulateLinePush()">
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+                             <i class="fa-solid fa-building-columns"></i>
+                        </div>
+                        <span class="text-xs font-medium text-gray-600" data-i18n="srvBank">Bank Account</span>
+                    </button>
+                    <button class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center space-y-2 active:bg-gray-50" onclick="navigateTo('onboarding')">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                             <i class="fa-solid fa-rotate"></i>
+                        </div>
+                        <span class="text-xs font-medium text-gray-600" data-i18n="updateDocs">Update Docs</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW: Admin -->
+            <div id="view-admin" class="view-section p-4 pb-20 bg-gray-100 min-h-full">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800" data-i18n="adminTitle">Admin Dashboard</h2>
+                        <p class="text-xs text-gray-500">Business Control Center</p>
+                    </div>
+                    <button onclick="navigateTo('dashboard')" class="bg-white w-8 h-8 rounded-full shadow flex items-center justify-center text-gray-500">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="grid grid-cols-3 gap-2 mb-6">
+                    <div class="bg-white p-3 rounded-lg shadow-sm border-l-4 border-blue-500">
+                        <p class="text-[10px] text-gray-400 uppercase">Users</p>
+                        <p class="text-xl font-bold text-gray-800" id="stat-total">1,240</p>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg shadow-sm border-l-4 border-red-500">
+                        <p class="text-[10px] text-gray-400 uppercase">Risk</p>
+                        <p class="text-xl font-bold text-red-600" id="stat-risk">85</p>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg shadow-sm border-l-4 border-yellow-500">
+                        <p class="text-[10px] text-gray-400 uppercase">Due 7d</p>
+                        <p class="text-xl font-bold text-yellow-600" id="stat-due">12</p>
+                    </div>
+                </div>
+
+                <!-- Broadcast Center -->
+                <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+                    <div class="flex items-center space-x-2 mb-4 border-b border-gray-100 pb-3">
+                        <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
+                            <i class="fa-solid fa-bullhorn"></i>
+                        </div>
+                        <h3 class="font-bold text-sm text-gray-800" data-i18n="broadcastTitle">Marketing Broadcast</h3>
+                    </div>
+
+                    <form onsubmit="sendBroadcast(event)" class="space-y-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 mb-1 block">Quick Template</label>
+                            <div class="flex space-x-2 overflow-x-auto no-scrollbar pb-1">
+                                <button type="button" onclick="fillTemplate('visa')" class="whitespace-nowrap px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600 border border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition">Visa Extension</button>
+                                <button type="button" onclick="fillTemplate('bank')" class="whitespace-nowrap px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600 border border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition">Bank Account</button>
+                                <button type="button" onclick="fillTemplate('insurance')" class="whitespace-nowrap px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600 border border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition">Insurance</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 mb-1 block">Message</label>
+                            <textarea id="broadcast-msg" rows="3" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Type your promotion..."></textarea>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" checked class="text-indigo-600 rounded">
+                                <span class="text-xs text-gray-600">Push to Line</span>
+                            </label>
+                            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-indigo-200 active:scale-95 transition">
+                                Send to All
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- User Table -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-gray-100">
+                        <h3 class="font-bold text-sm text-gray-800" data-i18n="userTable">Recent Users</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+                                <tr>
+                                    <th class="px-4 py-3">User</th>
+                                    <th class="px-4 py-3">Nationality</th>
+                                    <th class="px-4 py-3">Expiry</th>
+                                    <th class="px-4 py-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100" id="user-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Fixed Bottom Bar (Visible in Onboarding) -->
+        <div id="action-bar" class="hidden absolute bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 pb-safe z-40">
+            <button onclick="saveProfile()" class="w-full bg-blue-900 text-white py-3 rounded-xl font-bold shadow-lg active:bg-blue-800 transition">
+                <i class="fa-solid fa-check-circle mr-2"></i> <span data-i18n="btnActivate">Activate Reminders</span>
+            </button>
+        </div>
+
+        <!-- Navigation Tab Bar (Visible in Dashboard) -->
+        <div id="tab-bar" class="hidden absolute bottom-0 left-0 w-full bg-white border-t border-gray-200 pb-safe z-40 flex justify-around items-center h-16 text-gray-400 text-[10px] font-medium">
+            <button class="flex flex-col items-center justify-center w-full h-full text-blue-600" onclick="navigateTo('dashboard')">
+                <i class="fa-solid fa-house text-xl mb-1"></i>
+                <span data-i18n="navHome">Home</span>
+            </button>
+            <button class="flex flex-col items-center justify-center w-full h-full hover:text-blue-600 transition" onclick="navigateTo('onboarding')">
+                <i class="fa-solid fa-file-pen text-xl mb-1"></i>
+                <span data-i18n="navEdit">Edit</span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-gray-800/90 backdrop-blur text-white px-6 py-3 rounded-full shadow-2xl z-[100] transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none flex items-center space-x-2">
+        <i class="fa-solid fa-circle-check text-green-400"></i>
+        <span id="toast-msg" class="text-sm font-medium">Notification Sent</span>
+    </div>
+    
+    <!-- PWA Install Prompt (Smart Detection) -->
+    <div id="pwa-prompt" class="hidden fixed bottom-6 left-4 right-4 bg-white p-4 rounded-xl shadow-2xl z-[60] border border-gray-200 animate-slide-up">
+        <div class="flex justify-between items-start">
+            <div class="flex space-x-3">
+                <div class="w-10 h-10 bg-blue-900 rounded-lg flex items-center justify-center text-white">
+                    <i class="fa-solid fa-passport"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm">Install App</h4>
+                    <p class="text-xs text-gray-500">Tap <i class="fa-solid fa-share-from-square"></i> then "Add to Home Screen"</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('pwa-prompt').classList.add('hidden')" class="text-gray-400"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION & DATABASE NOTES
+        // ==========================================
+        // For Production (Vercel/Line/MongoDB):
+        // 1. Replace `localStorage` calls with `fetch('/api/user')`.
+        // 2. Configure Line Login Channel in Developer Console.
+        // 3. User `liff.init({ liffId: "YOUR_ID" })` for real User ID.
+        // ==========================================
+        
+        const LIFF_ID = "YOUR_LIFF_ID_HERE"; 
+        
+        // Mock Backend Data (Admin View)
+        let mockUsers = [
+            { name: "Alex R.", nationality: "USA", expiry: "2023-11-15", status: "Active", risk: "Low" },
+            { name: "Zhang W.", nationality: "China", expiry: "2023-10-05", status: "Warning", risk: "High" },
+            { name: "Sarah J.", nationality: "UK", expiry: "2024-01-20", status: "Active", risk: "Low" },
+            { name: "Mika T.", nationality: "Japan", expiry: "2023-10-12", status: "Active", risk: "Med" },
+        ];
+
+        // I18n Dictionary
+        const translations = {
+            en: {
+                appName: "Thai Visa<br>Connect",
+                landingTitle: "Your Thai Visa Butler",
+                landingDesc: "One-stop management for Visa, 90-Day, Bank Accounts & More.",
+                official: "Line Connect",
+                featLine: "Line Alert",
+                featBank: "Services",
+                featAI: "AI Scan",
+                btnStart: "Login with Line",
+                secureText: "100% Secure. We never share your data.",
+                scanTitle: "Smart Setup",
+                scanDesc: "Upload photos. AI will fill the details.",
+                cardPassport: "Passport Bio",
+                statusPassport: "Auto-detect Name & Nationality",
+                cardVisa: "Visa Stamp",
+                statusVisa: "Tap scan to detect expiry",
+                cardReport: "90-Day Slip",
+                statusReport: "Detects next due date",
+                btnScan: "Scan",
+                contactTitle: "Alert Settings",
+                btnActivate: "Activate Reminders",
+                dashTitle: "My Status",
+                statusActive: "Active",
+                dashReport: "90-Day Report",
+                dashVisa: "Visa Expiry",
+                remaining: "Remaining",
+                days: "Days",
+                srvBank: "Bank Account",
+                updateDocs: "Update Docs",
+                adminTitle: "Admin Dashboard",
+                broadcastTitle: "Marketing Broadcast",
+                userTable: "Recent Users",
+                navHome: "Home",
+                navEdit: "Edit"
+            },
+            zh: {
+                appName: "泰签管家<br>Thai Visa",
+                landingTitle: "您的一站式签证管家",
+                landingDesc: "Line 自动提醒，涵盖签证跑腿、银行开户及保险服务。",
+                official: "官方认证",
+                featLine: "Line 通知",
+                featBank: "综合服务",
+                featAI: "AI 智能扫描",
+                btnStart: "Line 一键登录",
+                secureText: "100% 安全加密，绝不泄露您的隐私。",
+                scanTitle: "智能设置",
+                scanDesc: "上传照片，系统自动识别日期。",
+                cardPassport: "护照首页",
+                statusPassport: "自动识别姓名与国籍",
+                cardVisa: "签证页",
+                statusVisa: "点击扫描以识别有效期",
+                cardReport: "90天报到单",
+                statusReport: "自动计算下次报到日",
+                btnScan: "扫描",
+                contactTitle: "通知设置",
+                btnActivate: "开启管家服务",
+                dashTitle: "我的状态",
+                statusActive: "监控中",
+                dashReport: "90天报到倒计时",
+                dashVisa: "签证有效期",
+                remaining: "剩余天数",
+                days: "天",
+                srvBank: "银行/保险",
+                updateDocs: "更新资料",
+                adminTitle: "管理后台",
+                broadcastTitle: "营销广播",
+                userTable: "最新用户",
+                navHome: "首页",
+                navEdit: "编辑"
+            }
+        };
+
+        let currentLang = 'en';
+        let state = {
+            visaDate: null,
+            reportDate: null,
+            lineId: null,
+            phone: null,
+            nationality: null,
+            passportNo: null
+        };
+
+        // ==========================================
+        // CORE LOGIC
+        // ==========================================
+
+        window.onload = async function() {
+            // 1. Initialize Language
+            const savedLang = localStorage.getItem('tvr_lang') || 'en';
+            changeLanguage(savedLang);
+
+            // 2. Check Auth State
+            const savedData = localStorage.getItem('tvr_data');
+            if (savedData) {
+                state = JSON.parse(savedData);
+                updateDashboardUI();
+                navigateTo('dashboard', false);
+            } else {
+                navigateTo('landing', false);
+                checkPWA();
+            }
+
+            // 3. Load Admin Data
+            renderAdminTable();
+        };
+
+        function checkPWA() {
+            // Check if running on mobile
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            
+            if (isMobile && !isStandalone) {
+                setTimeout(() => {
+                    document.getElementById('pwa-prompt').classList.remove('hidden');
+                }, 2500);
+            }
+        }
+
+        function startApp() {
+            // Simulate Line Login Process
+            const btn = document.querySelector('#view-landing button');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Connecting...`;
+            
+            setTimeout(() => {
+                // Mock Success
+                const mockProfile = {
+                    userId: "U8372648592" + Math.floor(Math.random()*1000),
+                    displayName: "John Line",
+                };
+                
+                state.lineId = mockProfile.userId;
+                document.getElementById('line-id').value = mockProfile.userId;
+                document.getElementById('user-badge').innerHTML = `<i class="fa-brands fa-line mr-1"></i> ${mockProfile.displayName}`;
+                
+                navigateTo('onboarding');
+                showToast(currentLang === 'en' ? "Connected to Line" : "Line 连接成功");
+                btn.innerHTML = originalContent; // Reset button
+            }, 1000);
+        }
+
+        function navigateTo(viewId, animate = true) {
+            // Hide all sections
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.remove('view-active');
+                if(animate) el.style.opacity = '0';
+                setTimeout(() => {
+                    if(!el.classList.contains('view-active')) el.style.display = 'none';
+                }, 300);
+            });
+
+            // Show Target
+            const target = document.getElementById(`view-${viewId}`);
+            target.style.display = 'block';
+            
+            // Force reflow
+            void target.offsetWidth; 
+            
+            target.classList.add('view-active');
+            target.style.opacity = '1';
+
+            // Toggle Bars
+            const actionBar = document.getElementById('action-bar');
+            const tabBar = document.getElementById('tab-bar');
+            
+            if (viewId === 'onboarding') {
+                actionBar.classList.remove('hidden');
+                tabBar.classList.add('hidden');
+            } else if (viewId === 'dashboard') {
+                actionBar.classList.add('hidden');
+                tabBar.classList.remove('hidden');
+                updateDashboardUI();
+            } else {
+                actionBar.classList.add('hidden');
+                tabBar.classList.add('hidden');
+            }
+        }
+
+        // ==========================================
+        // SCANNING LOGIC (MOCK OCR)
+        // ==========================================
+
+        function handleScan(input, type) {
+            if (input.files && input.files[0]) {
+                const card = document.getElementById(`card-${type}`);
+                const status = document.getElementById(`status-${type}`);
+                const inputContainer = document.getElementById(`input-${type}-container`);
+                
+                // 1. UI Loading State
+                card.classList.add('scanning', 'border-blue-400');
+                status.innerText = currentLang === 'en' ? "Scanning..." : "扫描中...";
+                status.classList.add('text-blue-500', 'animate-pulse');
+
+                // 2. Simulated Delay (1.5s)
+                setTimeout(() => {
+                    card.classList.remove('scanning', 'border-blue-400');
+                    card.classList.add('border-green-500', 'bg-green-50/50');
+                    
+                    status.innerText = currentLang === 'en' ? "Scan Complete" : "扫描完成";
+                    status.classList.remove('text-blue-500', 'animate-pulse');
+                    status.classList.add('text-green-600', 'font-bold');
+
+                    // 3. Mock Data Result
+                    inputContainer.classList.remove('hidden');
+                    const today = new Date();
+                    
+                    if (type === 'passport') {
+                        document.getElementById('val-nationality').value = "United States";
+                        document.getElementById('val-passport').value = "P987654321";
+                        state.nationality = "USA";
+                        showToast(currentLang === 'en' ? "Found: United States" : "识别国籍：美国");
+                    } else if (type === 'visa') {
+                        const d = new Date(today.setDate(today.getDate() + 120));
+                        document.getElementById('date-visa').value = d.toISOString().split('T')[0];
+                        showToast("Expiry: " + d.toISOString().split('T')[0]);
+                    } else {
+                        const d = new Date(today.setDate(today.getDate() + 24));
+                        document.getElementById('date-report').value = d.toISOString().split('T')[0];
+                    }
+
+                }, 1500);
+            }
+        }
+
+        function saveProfile() {
+            const vDate = document.getElementById('date-visa').value;
+            const rDate = document.getElementById('date-report').value;
+            const phone = document.getElementById('phone-number').value;
+            const nat = document.getElementById('val-nationality').value;
+            const pass = document.getElementById('val-passport').value;
+
+            // In production, this would POST to database
+            state.visaDate = vDate;
+            state.reportDate = rDate;
+            state.phone = phone;
+            state.nationality = nat;
+            state.passportNo = pass;
+
+            localStorage.setItem('tvr_data', JSON.stringify(state));
+            
+            // Add self to admin table mock
+            mockUsers.unshift({
+                name: "You (Demo)",
+                nationality: nat || "Unknown",
+                expiry: vDate || "N/A",
+                status: "Active"
+            });
+            renderAdminTable();
+
+            showToast(currentLang === 'en' ? "Service Activated!" : "管家服务已激活！");
+            
+            setTimeout(() => {
+                navigateTo('dashboard');
+            }, 1000);
+        }
+
+        // ==========================================
+        // DASHBOARD UTILS
+        // ==========================================
+
+        function updateDashboardUI() {
+            if (!state.reportDate && !state.visaDate) return;
+
+            const getDays = (dateStr) => {
+                if(!dateStr) return '--';
+                const diff = new Date(dateStr) - new Date();
+                return Math.ceil(diff / (1000 * 60 * 60 * 24));
+            };
+
+            if (state.reportDate) {
+                const days = getDays(state.reportDate);
+                document.getElementById('dash-report-days').innerText = `${days} ${translations[currentLang].days}`;
+                document.getElementById('dash-report-date').innerText = `Due: ${state.reportDate}`;
+            }
+
+            if (state.visaDate) {
+                const days = getDays(state.visaDate);
+                document.getElementById('dash-visa-days').innerText = days;
+                document.getElementById('dash-visa-date').innerText = `Expires: ${state.visaDate}`;
+            }
+        }
+
+        function simulateLinePush() {
+            // In production, this calls your API -> Line Messaging API
+            showToast(currentLang === 'en' ? "Opening Bank Service..." : "正在转接银行开户服务...");
+        }
+
+        // ==========================================
+        // ADMIN & I18N
+        // ==========================================
+
+        function toggleAdmin() {
+            const pin = prompt("Admin PIN (Demo: 8888)");
+            if (pin === "8888") {
+                navigateTo('admin');
+            }
+        }
+
+        function renderAdminTable() {
+            const tbody = document.getElementById('user-table-body');
+            tbody.innerHTML = mockUsers.map(u => `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-4 py-3 font-medium text-gray-900">${u.name}</td>
+                    <td class="px-4 py-3 text-gray-500">${u.nationality}</td>
+                    <td class="px-4 py-3 text-gray-500">${u.expiry}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded-full text-xs font-bold ${u.status === 'Warning' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">
+                            ${u.status}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('stat-total').innerText = mockUsers.length + 1240;
+        }
+
+        function fillTemplate(type) {
+            const box = document.getElementById('broadcast-msg');
+            if (type === 'visa') {
+                box.value = currentLang === 'en' 
+                    ? "⚠️ Urgent: Your Visa expires in 30 days! Contact us for a hassle-free extension." 
+                    : "⚠️ 紧急：您的签证还有30天到期！回复我们，获取快速续签服务。";
+            } else if (type === 'bank') {
+                box.value = currentLang === 'en'
+                    ? "🏦 Need a Bank Account? We help foreigners open Bangkok Bank accounts without work permits."
+                    : "🏦 需要泰国银行卡？无工作证也能开立盘谷银行账户，点击咨询。";
+            } else {
+                box.value = currentLang === 'en'
+                    ? "🛡️ Special Offer: Health Insurance for expats starting at 5,000 THB/year."
+                    : "🛡️ 特别优惠：外籍人士医疗保险，每年仅需 5,000 泰铢起。";
+            }
+        }
+
+        function sendBroadcast(event) {
+            event.preventDefault();
+            const btn = event.target.querySelector('button');
+            const originalText = btn.innerText;
+            
+            btn.innerText = "Sending...";
+            btn.classList.add('opacity-75');
+            
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.remove('opacity-75');
+                showToast(`Sent to ${mockUsers.length} users via Line`);
+                event.target.reset();
+            }, 1500);
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('tvr_lang', lang);
+
+            // Update Buttons
+            document.getElementById('btn-en').className = lang === 'en' ? "text-[10px] font-bold px-3 py-1 bg-blue-600 rounded text-white shadow transition-all" : "text-[10px] font-medium px-3 py-1 text-blue-300 hover:text-white transition-all";
+            document.getElementById('btn-zh').className = lang === 'zh' ? "text-[10px] font-bold px-3 py-1 bg-blue-600 rounded text-white shadow transition-all" : "text-[10px] font-medium px-3 py-1 text-blue-300 hover:text-white transition-all";
+
+            // Update Text
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = translations[lang][key];
+                    } else {
+                        el.innerHTML = translations[lang][key];
+                    }
+                }
+            });
+            
+            // Re-render things that depend on lang
+            if(document.getElementById('view-dashboard').classList.contains('view-active')) {
+                updateDashboardUI();
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            t.classList.remove('opacity-0', 'translate-y-[-20px]');
+            t.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                t.classList.add('opacity-0', 'translate-y-[-20px]');
+                t.classList.remove('opacity-100', 'translate-y-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
