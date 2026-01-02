@@ -6,11 +6,15 @@
     <title>Thai Visa Connect</title>
     
     <!-- PWA / Mobile Web App Meta Tags -->
-    <meta name="theme-color" content="#1e3a8a"> <!-- Matches blue-900 -->
+    <meta name="theme-color" content="#1e3a8a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Thai Visa">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/sprites/solid.svg"> 
+    
+    <!-- App Icons (Fixes White Box Issue) -->
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/9463/9463071.png">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/9463/9463071.png">
+    <link rel="manifest" href="manifest.json">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -27,7 +31,7 @@
             font-family: 'Inter', 'Noto Sans SC', sans-serif; 
             background-color: #f0f2f5;
             -webkit-tap-highlight-color: transparent;
-            overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+            overscroll-behavior-y: none;
         }
         
         /* Smooth View Transitions */
@@ -66,11 +70,9 @@
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .pt-safe { padding-top: env(safe-area-inset-top); }
         
-        /* Hide Scrollbar but keep functionality */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Animation for PWA Prompt */
         @keyframes slide-up {
             from { transform: translateY(100%); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
@@ -81,11 +83,15 @@
             to { opacity: 1; }
         }
         .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
+
+        /* Modal Animation */
+        .modal-enter { transform: scale(0.95); opacity: 0; }
+        .modal-active { transform: scale(1); opacity: 1; }
     </style>
 </head>
 <body class="text-gray-800 h-screen overflow-hidden flex flex-col">
 
-    <!-- App Container (Mobile Width Constrained on Desktop) -->
+    <!-- App Container -->
     <div id="app" class="w-full max-w-md mx-auto bg-gray-50 h-full flex flex-col relative shadow-2xl">
         
         <!-- Navbar -->
@@ -98,22 +104,20 @@
             </div>
             
             <div class="flex items-center space-x-3">
-                <!-- Language Toggle -->
                 <div class="bg-blue-950/50 p-1 rounded-lg flex border border-blue-800">
                     <button onclick="changeLanguage('en')" id="btn-en" class="text-[10px] font-bold px-3 py-1 bg-blue-600 rounded text-white shadow transition-all">EN</button>
                     <button onclick="changeLanguage('zh')" id="btn-zh" class="text-[10px] font-medium px-3 py-1 text-blue-300 hover:text-white transition-all">中文</button>
                 </div>
-                <!-- Admin Button -->
                 <button onclick="toggleAdmin()" class="w-8 h-8 rounded-full bg-blue-800 flex items-center justify-center text-blue-200 hover:text-white hover:bg-blue-700 transition">
                     <i class="fa-solid fa-shield-halved text-xs"></i>
                 </button>
             </div>
         </nav>
 
-        <!-- Scrollable Main Content -->
+        <!-- Main Content -->
         <main class="flex-grow overflow-y-auto no-scrollbar relative bg-white">
             
-            <!-- VIEW: Landing Page -->
+            <!-- VIEW: Landing -->
             <div id="view-landing" class="view-section view-active h-full flex flex-col p-6">
                 <div class="flex-grow flex flex-col items-center justify-center text-center space-y-6">
                     <div class="relative">
@@ -126,38 +130,21 @@
                     </div>
                     
                     <div class="space-y-2">
-                        <h2 class="text-2xl font-bold text-gray-900 leading-tight" data-i18n="landingTitle">Your Thai Visa Butler</h2>
-                        <p class="text-gray-500 text-sm px-4" data-i18n="landingDesc">One-stop management for Visa, 90-Day, Bank Accounts & More.</p>
-                    </div>
-
-                    <!-- Feature Pills -->
-                    <div class="flex flex-wrap justify-center gap-2 w-full mt-4">
-                        <div class="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
-                            <i class="fa-solid fa-bell text-blue-500"></i>
-                            <span class="text-xs font-medium text-gray-600" data-i18n="featLine">Line Alert</span>
-                        </div>
-                        <div class="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
-                            <i class="fa-solid fa-building-columns text-purple-500"></i>
-                            <span class="text-xs font-medium text-gray-600" data-i18n="featBank">Services</span>
-                        </div>
-                        <div class="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
-                            <i class="fa-solid fa-wand-magic-sparkles text-orange-500"></i>
-                            <span class="text-xs font-medium text-gray-600" data-i18n="featAI">AI Scan</span>
-                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900 leading-tight" data-i18n="landingTitle">Thai Visa Connect</h2>
+                        <p class="text-gray-500 text-sm px-4" data-i18n="landingDesc">Your Personal Visa Butler. Automated alerts for Visa & 90-Day Reports.</p>
                     </div>
                 </div>
 
-                <!-- Call to Action -->
                 <div class="mt-auto pt-6 pb-safe">
-                    <button onclick="startApp()" class="w-full bg-[#06C755] hover:bg-[#05b34c] text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 flex items-center justify-center space-x-2 transition-transform active:scale-95 group">
+                    <button onclick="simulateLogin()" class="w-full bg-[#06C755] hover:bg-[#05b34c] text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-100 flex items-center justify-center space-x-2 transition-transform active:scale-95 group">
                         <i class="fa-brands fa-line text-2xl group-hover:rotate-12 transition-transform"></i>
                         <span data-i18n="btnStart">Login with Line</span>
                     </button>
-                    <p class="text-[10px] text-center text-gray-400 mt-3" data-i18n="secureText">100% Secure. We never share your data.</p>
+                    <p class="text-[10px] text-center text-gray-400 mt-3" data-i18n="secureText">Secure & Confidential</p>
                 </div>
             </div>
 
-            <!-- VIEW: Onboarding (Scanner) -->
+            <!-- VIEW: Onboarding -->
             <div id="view-onboarding" class="view-section pb-32 p-4">
                 <div class="flex items-center justify-between mb-6">
                     <div>
@@ -170,7 +157,7 @@
                 </div>
 
                 <div class="space-y-4">
-                    <!-- Card 0: Passport (New!) -->
+                    <!-- Passport Card -->
                     <div class="relative bg-white border border-gray-200 rounded-2xl p-4 shadow-sm overflow-hidden group transition-all" id="card-passport">
                         <div class="scan-line"></div>
                         <div class="flex items-start space-x-4">
@@ -202,7 +189,7 @@
                         </div>
                     </div>
 
-                    <!-- Card 1: Visa -->
+                    <!-- Visa Card -->
                     <div class="relative bg-white border border-gray-200 rounded-2xl p-4 shadow-sm overflow-hidden group transition-all" id="card-visa">
                         <div class="scan-line"></div>
                         <div class="flex items-start space-x-4">
@@ -220,14 +207,13 @@
                                 <input type="file" class="hidden" accept="image/*" capture="environment" onchange="handleScan(this, 'visa')">
                             </label>
                         </div>
-                        <!-- Hidden Input Revealed after scan -->
                         <div id="input-visa-container" class="hidden mt-3 pt-3 border-t border-gray-100 animate-fade-in">
                             <label class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Detected Date</label>
-                            <input type="date" id="date-visa" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="date" id="date-visa" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold outline-none">
                         </div>
                     </div>
 
-                    <!-- Card 2: 90 Day -->
+                    <!-- 90 Day Card -->
                     <div class="relative bg-white border border-gray-200 rounded-2xl p-4 shadow-sm overflow-hidden" id="card-report">
                         <div class="scan-line"></div>
                         <div class="flex items-start space-x-4">
@@ -247,11 +233,11 @@
                         </div>
                         <div id="input-report-container" class="hidden mt-3 pt-3 border-t border-gray-100 animate-fade-in">
                             <label class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Detected Date</label>
-                            <input type="date" id="date-report" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="date" id="date-report" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold outline-none">
                         </div>
                     </div>
 
-                    <!-- Contact Info (Line auto-filled) -->
+                    <!-- Contact Info -->
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                         <h3 class="font-bold text-sm mb-3" data-i18n="contactTitle">Alert Settings</h3>
                         <div class="space-y-3">
@@ -270,7 +256,7 @@
                                     <div class="w-10 flex items-center justify-center bg-gray-200 rounded-l-lg border border-r-0 border-gray-300 text-sm">
                                         🇹🇭
                                     </div>
-                                    <input type="tel" id="phone-number" placeholder="081 234 5678" class="flex-1 bg-white border border-gray-300 rounded-r-lg px-3 py-2 text-sm focus:border-blue-500 outline-none">
+                                    <input type="tel" id="phone-number" placeholder="081 234 5678" class="flex-1 bg-white border border-gray-300 rounded-r-lg px-3 py-2 text-sm outline-none">
                                 </div>
                             </div>
                         </div>
@@ -292,7 +278,6 @@
 
                 <!-- 90 Day Card -->
                 <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 text-white shadow-xl shadow-blue-200 mb-5 relative overflow-hidden transform transition hover:scale-[1.01]">
-                    <!-- Background Pattern -->
                     <div class="absolute -right-6 -top-6 opacity-10 rotate-12">
                         <i class="fa-solid fa-file-invoice text-[120px]"></i>
                     </div>
@@ -309,10 +294,8 @@
                         </div>
                         <h3 class="text-4xl font-bold mb-1 tracking-tight" id="dash-report-days">-- Days</h3>
                         <p class="text-sm text-blue-100" data-i18n="remaining">Remaining</p>
-                        
-                        <!-- Progress Bar -->
                         <div class="w-full bg-black/20 rounded-full h-1.5 mt-6">
-                            <div class="bg-yellow-400 h-1.5 rounded-full shadow-[0_0_10px_rgba(250,204,21,0.5)]" style="width: 75%"></div>
+                            <div class="bg-yellow-400 h-1.5 rounded-full" style="width: 75%"></div>
                         </div>
                     </div>
                 </div>
@@ -330,7 +313,7 @@
                     <p class="text-xs text-gray-400 mt-1" id="dash-visa-date">Expires: --/--/----</p>
                 </div>
 
-                <!-- Action Grid (Services) -->
+                <!-- Action Grid -->
                 <div class="grid grid-cols-2 gap-3">
                     <button class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center justify-center space-y-2 active:bg-gray-50" onclick="navigateTo('services')">
                         <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
@@ -347,21 +330,18 @@
                 </div>
             </div>
             
-            <!-- VIEW: Services (New!) -->
+            <!-- VIEW: Services Hub (New) -->
             <div id="view-services" class="view-section p-4 pb-24">
                 <div class="flex justify-between items-center mb-6">
                     <div>
                          <h2 class="text-2xl font-bold text-gray-900" data-i18n="servicesTitle">Premium Services</h2>
                          <p class="text-xs text-gray-500" data-i18n="servicesDesc">We handle the paperwork for you.</p>
                     </div>
-                    <button onclick="navigateTo('dashboard')" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
                 </div>
                 
                 <div class="space-y-3">
-                    <!-- Service Item: Bank -->
-                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4 active:scale-[0.98] transition" onclick="openServiceModal('bank')">
+                    <!-- Bank Service -->
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4 active:scale-[0.98] transition cursor-pointer" onclick="openServiceModal('Bank Account')">
                         <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
                             <i class="fa-solid fa-building-columns text-xl"></i>
                         </div>
@@ -369,11 +349,11 @@
                             <h3 class="font-bold text-sm text-gray-900" data-i18n="srvBankTitle">Bank Account</h3>
                             <p class="text-xs text-gray-500 mt-1" data-i18n="srvBankDesc">Bangkok Bank. No Work Permit required.</p>
                         </div>
-                        <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                        <button class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-xs font-bold">Apply</button>
                     </div>
 
-                    <!-- Service Item: Visa -->
-                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4 active:scale-[0.98] transition" onclick="openServiceModal('visa')">
+                    <!-- Visa Extension -->
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4 active:scale-[0.98] transition cursor-pointer" onclick="openServiceModal('Visa Extension')">
                         <div class="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
                             <i class="fa-solid fa-passport text-xl"></i>
                         </div>
@@ -381,11 +361,11 @@
                             <h3 class="font-bold text-sm text-gray-900" data-i18n="srvVisaTitle">Visa Extension</h3>
                             <p class="text-xs text-gray-500 mt-1" data-i18n="srvVisaDesc">Hassle-free extension service.</p>
                         </div>
-                        <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                        <button class="bg-orange-50 text-orange-600 px-3 py-1 rounded-lg text-xs font-bold">Apply</button>
                     </div>
 
-                    <!-- Service Item: Insurance -->
-                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4 active:scale-[0.98] transition" onclick="openServiceModal('insurance')">
+                    <!-- Insurance -->
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4 active:scale-[0.98] transition cursor-pointer" onclick="openServiceModal('Health Insurance')">
                         <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
                             <i class="fa-solid fa-heart-pulse text-xl"></i>
                         </div>
@@ -393,7 +373,7 @@
                             <h3 class="font-bold text-sm text-gray-900" data-i18n="srvInsTitle">Health Insurance</h3>
                             <p class="text-xs text-gray-500 mt-1" data-i18n="srvInsDesc">Valid for Visa requirements.</p>
                         </div>
-                        <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                        <button class="bg-green-50 text-green-600 px-3 py-1 rounded-lg text-xs font-bold">Apply</button>
                     </div>
                 </div>
             </div>
@@ -403,30 +383,30 @@
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h2 class="text-xl font-bold text-gray-800" data-i18n="adminTitle">Admin Dashboard</h2>
-                        <p class="text-xs text-gray-500">Business Control Center</p>
+                        <p class="text-xs text-gray-500">Thai Visa Connect</p>
                     </div>
                     <button onclick="navigateTo('dashboard')" class="bg-white w-8 h-8 rounded-full shadow flex items-center justify-center text-gray-500">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
 
-                <!-- Stats Overview -->
+                <!-- Stats -->
                 <div class="grid grid-cols-3 gap-2 mb-6">
                     <div class="bg-white p-3 rounded-lg shadow-sm border-l-4 border-blue-500">
                         <p class="text-[10px] text-gray-400 uppercase">Users</p>
-                        <p class="text-xl font-bold text-gray-800" id="stat-total">1,240</p>
+                        <p class="text-xl font-bold text-gray-800" id="stat-total">--</p>
                     </div>
                     <div class="bg-white p-3 rounded-lg shadow-sm border-l-4 border-red-500">
                         <p class="text-[10px] text-gray-400 uppercase">Risk</p>
-                        <p class="text-xl font-bold text-red-600" id="stat-risk">85</p>
+                        <p class="text-xl font-bold text-red-600" id="stat-risk">--</p>
                     </div>
                     <div class="bg-white p-3 rounded-lg shadow-sm border-l-4 border-yellow-500">
                         <p class="text-[10px] text-gray-400 uppercase">Due 7d</p>
-                        <p class="text-xl font-bold text-yellow-600" id="stat-due">12</p>
+                        <p class="text-xl font-bold text-yellow-600" id="stat-due">--</p>
                     </div>
                 </div>
 
-                <!-- Broadcast Center -->
+                <!-- Broadcast -->
                 <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
                     <div class="flex items-center space-x-2 mb-4 border-b border-gray-100 pb-3">
                         <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
@@ -439,26 +419,13 @@
                         <div>
                             <label class="text-xs font-bold text-gray-500 mb-1 block">Quick Template</label>
                             <div class="flex space-x-2 overflow-x-auto no-scrollbar pb-1">
-                                <button type="button" onclick="fillTemplate('visa')" class="whitespace-nowrap px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600 border border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition">Visa Extension</button>
-                                <button type="button" onclick="fillTemplate('bank')" class="whitespace-nowrap px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600 border border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition">Bank Account</button>
-                                <button type="button" onclick="fillTemplate('insurance')" class="whitespace-nowrap px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600 border border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition">Insurance</button>
+                                <button type="button" onclick="fillTemplate('visa')" class="whitespace-nowrap px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600 border border-gray-200">Visa Extension</button>
+                                <button type="button" onclick="fillTemplate('bank')" class="whitespace-nowrap px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600 border border-gray-200">Bank Account</button>
+                                <button type="button" onclick="fillTemplate('insurance')" class="whitespace-nowrap px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600 border border-gray-200">Insurance</button>
                             </div>
                         </div>
-
-                        <div>
-                            <label class="text-xs font-bold text-gray-500 mb-1 block">Message</label>
-                            <textarea id="broadcast-msg" rows="3" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Type your promotion..."></textarea>
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <label class="flex items-center space-x-2">
-                                <input type="checkbox" checked class="text-indigo-600 rounded">
-                                <span class="text-xs text-gray-600">Push to Line</span>
-                            </label>
-                            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg shadow-indigo-200 active:scale-95 transition">
-                                Send to All
-                            </button>
-                        </div>
+                        <textarea id="broadcast-msg" rows="3" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm outline-none" placeholder="Type message..."></textarea>
+                        <button type="submit" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg">Send to All</button>
                     </form>
                 </div>
 
@@ -474,12 +441,9 @@
                                     <th class="px-4 py-3">User</th>
                                     <th class="px-4 py-3">Nationality</th>
                                     <th class="px-4 py-3">Expiry</th>
-                                    <th class="px-4 py-3">Status</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100" id="user-table-body">
-                                <!-- Populated by JS -->
-                            </tbody>
+                            <tbody class="divide-y divide-gray-100" id="user-table-body"></tbody>
                         </table>
                     </div>
                 </div>
@@ -487,16 +451,45 @@
 
         </main>
 
-        <!-- Fixed Bottom Bar (Visible in Onboarding) -->
+        <!-- Service Modal (Hidden) -->
+        <div id="service-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeServiceModal()"></div>
+            <div class="bg-white rounded-2xl w-full max-w-sm relative z-10 p-5 transform transition-all scale-95 opacity-0" id="service-modal-content">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-900" id="modal-service-name">Service Name</h3>
+                    <button onclick="closeServiceModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div class="p-3 bg-blue-50 text-blue-700 text-xs rounded-lg border border-blue-100">
+                        <i class="fa-solid fa-info-circle mr-1"></i> Our team will contact you via Line & Phone shortly.
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 mb-1 block">Your Name</label>
+                        <input type="text" id="modal-name" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 mb-1 block">Phone Number</label>
+                        <input type="tel" id="modal-phone" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
+                    </div>
+                    <button onclick="submitServiceRequest()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg active:scale-95 transition">
+                        Confirm Request
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Bar (Onboarding) -->
         <div id="action-bar" class="hidden absolute bottom-0 left-0 w-full bg-white border-t border-gray-200 p-4 pb-safe z-40">
             <button onclick="saveProfile()" class="w-full bg-blue-900 text-white py-3 rounded-xl font-bold shadow-lg active:bg-blue-800 transition">
                 <i class="fa-solid fa-check-circle mr-2"></i> <span data-i18n="btnActivate">Activate Reminders</span>
             </button>
         </div>
 
-        <!-- Navigation Tab Bar (Visible in Dashboard) -->
+        <!-- Tab Bar -->
         <div id="tab-bar" class="hidden absolute bottom-0 left-0 w-full bg-white border-t border-gray-200 pb-safe z-40 flex justify-around items-center h-16 text-gray-400 text-[10px] font-medium">
-            <button class="flex flex-col items-center justify-center w-full h-full text-blue-600" onclick="navigateTo('dashboard')">
+            <button class="flex flex-col items-center justify-center w-full h-full text-blue-600 transition" onclick="navigateTo('dashboard')">
                 <i class="fa-solid fa-house text-xl mb-1"></i>
                 <span data-i18n="navHome">Home</span>
             </button>
@@ -518,7 +511,7 @@
         <span id="toast-msg" class="text-sm font-medium truncate">Notification Sent</span>
     </div>
     
-    <!-- PWA Install Prompt (Smart Detection) -->
+    <!-- PWA Prompt -->
     <div id="pwa-prompt" class="hidden fixed bottom-6 left-4 right-4 bg-white p-4 rounded-xl shadow-2xl z-[60] border border-gray-200 animate-slide-up">
         <div class="flex justify-between items-start">
             <div class="flex space-x-3">
@@ -535,31 +528,25 @@
     </div>
 
     <script>
-        // ==========================================
-        // CONFIGURATION
-        // ==========================================
-        const LIFF_ID = "YOUR_LIFF_ID_HERE"; 
-        
-        // Mock Backend Data (Admin View)
+        // CONFIG
+        const LIFF_ID = "YOUR_LIFF_ID_HERE"; // Replace after deployment
+        let currentLang = 'en';
+        let state = { visaDate: null, reportDate: null, lineId: null, phone: null, nationality: null, passportNo: null };
         let mockUsers = [
-            { name: "Alex R.", nationality: "USA", expiry: "2023-11-15", status: "Active", risk: "Low" },
-            { name: "Zhang W.", nationality: "China", expiry: "2023-10-05", status: "Warning", risk: "High" },
-            { name: "Sarah J.", nationality: "UK", expiry: "2024-01-20", status: "Active", risk: "Low" },
-            { name: "Mika T.", nationality: "Japan", expiry: "2023-10-12", status: "Active", risk: "Med" },
+            { name: "John D.", nationality: "USA", expiry: "2023-11-15", status: "Active" },
+            { name: "Zhang W.", nationality: "China", expiry: "2023-10-05", status: "Warning" },
+            { name: "Mika T.", nationality: "Japan", expiry: "2024-01-20", status: "Active" }
         ];
 
-        // I18n Dictionary
+        // TRANSLATIONS
         const translations = {
             en: {
                 appName: "Thai Visa<br>Connect",
-                landingTitle: "Your Thai Visa Butler",
-                landingDesc: "One-stop management for Visa, 90-Day, Bank Accounts & More.",
+                landingTitle: "Thai Visa Connect",
+                landingDesc: "Your Personal Visa Butler. Automated alerts for Visa & 90-Day Reports.",
                 official: "Line Connect",
-                featLine: "Line Alert",
-                featBank: "Services",
-                featAI: "AI Scan",
                 btnStart: "Login with Line",
-                secureText: "100% Secure. We never share your data.",
+                secureText: "Secure & Confidential",
                 scanTitle: "Smart Setup",
                 scanDesc: "Upload photos. AI will fill the details.",
                 cardPassport: "Passport Bio",
@@ -598,16 +585,13 @@
             },
             zh: {
                 appName: "泰签管家<br>Thai Visa",
-                landingTitle: "您的一站式签证管家",
-                landingDesc: "Line 自动提醒，涵盖签证跑腿、银行开户及保险服务。",
+                landingTitle: "泰签管家",
+                landingDesc: "您的一站式签证管家，自动提醒签证与90天报到。",
                 official: "官方认证",
-                featLine: "Line 通知",
-                featBank: "综合服务",
-                featAI: "AI 智能扫描",
                 btnStart: "Line 一键登录",
-                secureText: "100% 安全加密，绝不泄露您的隐私。",
+                secureText: "100% 安全保密",
                 scanTitle: "智能设置",
-                scanDesc: "上传照片，系统自动识别日期。",
+                scanDesc: "上传照片，AI自动识别资料。",
                 cardPassport: "护照首页",
                 statusPassport: "自动识别姓名与国籍",
                 cardVisa: "签证页",
@@ -644,96 +628,67 @@
             }
         };
 
-        let currentLang = 'en';
-        let state = {
-            visaDate: null,
-            reportDate: null,
-            lineId: null,
-            phone: null,
-            nationality: null,
-            passportNo: null
-        };
-
-        // ==========================================
-        // CORE LOGIC
-        // ==========================================
-
-        window.onload = async function() {
-            // 1. Initialize Language
+        // INIT
+        window.onload = function() {
             const savedLang = localStorage.getItem('tvr_lang') || 'en';
             changeLanguage(savedLang);
 
-            // 2. Check Auth State
             const savedData = localStorage.getItem('tvr_data');
             if (savedData) {
                 state = JSON.parse(savedData);
+                document.getElementById('line-id').value = state.lineId || '';
+                document.getElementById('phone-number').value = state.phone || '';
+                if(state.visaDate) document.getElementById('date-visa').value = state.visaDate;
+                if(state.reportDate) document.getElementById('date-report').value = state.reportDate;
+                if(state.nationality) {
+                    document.getElementById('val-nationality').value = state.nationality;
+                    document.getElementById('val-passport').value = state.passportNo;
+                    document.getElementById('input-passport-container').classList.remove('hidden');
+                }
                 updateDashboardUI();
                 navigateTo('dashboard', false);
             } else {
                 navigateTo('landing', false);
                 checkPWA();
             }
-
-            // 3. Load Admin Data
             renderAdminTable();
         };
 
-        function checkPWA() {
-            // Check if running on mobile
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-            
-            if (isMobile && !isStandalone) {
-                setTimeout(() => {
-                    document.getElementById('pwa-prompt').classList.remove('hidden');
-                }, 2500);
-            }
-        }
-
-        function startApp() {
-            // Simulate Line Login Process
+        // LOGIC
+        function simulateLogin() {
             const btn = document.querySelector('#view-landing button');
-            const originalContent = btn.innerHTML;
             btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Connecting...`;
-            
             setTimeout(() => {
-                // Mock Success
-                const mockProfile = {
-                    userId: "U" + Math.random().toString(36).substr(2, 10).toUpperCase(),
-                    displayName: "John Line",
-                };
-                
+                const mockProfile = { userId: "U" + Math.random().toString(36).substr(2, 8).toUpperCase(), displayName: "John Line" };
                 state.lineId = mockProfile.userId;
                 document.getElementById('line-id').value = mockProfile.userId;
                 document.getElementById('user-badge').innerHTML = `<i class="fa-brands fa-line mr-1"></i> ${mockProfile.displayName}`;
-                
                 navigateTo('onboarding');
-                showToast(currentLang === 'en' ? "Connected to Line" : "Line 连接成功");
-                btn.innerHTML = originalContent; // Reset button
-            }, 1500);
+                showToast("Connected to Line");
+                btn.innerHTML = `<i class="fa-brands fa-line text-2xl"></i> <span>Login with Line</span>`;
+            }, 1000);
+        }
+
+        function checkPWA() {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            if (isIOS && !isStandalone) {
+                setTimeout(() => document.getElementById('pwa-prompt').classList.remove('hidden'), 2000);
+            }
         }
 
         function navigateTo(viewId, animate = true) {
-            // Hide all sections
             document.querySelectorAll('.view-section').forEach(el => {
                 el.classList.remove('view-active');
                 if(animate) el.style.opacity = '0';
-                setTimeout(() => {
-                    if(!el.classList.contains('view-active')) el.style.display = 'none';
-                }, 300);
+                setTimeout(() => { if(!el.classList.contains('view-active')) el.style.display = 'none'; }, 300);
             });
-
-            // Show Target
             const target = document.getElementById(`view-${viewId}`);
             target.style.display = 'block';
-            
-            // Force reflow
             void target.offsetWidth; 
-            
             target.classList.add('view-active');
             target.style.opacity = '1';
 
-            // Toggle Bars
             const actionBar = document.getElementById('action-bar');
             const tabBar = document.getElementById('tab-bar');
             
@@ -749,110 +704,72 @@
                 tabBar.classList.add('hidden');
             }
             
-            // Tab active state
             document.querySelectorAll('#tab-bar button').forEach(btn => btn.classList.remove('text-blue-600'));
             if(viewId === 'dashboard') document.querySelectorAll('#tab-bar button')[0].classList.add('text-blue-600');
             if(viewId === 'services') document.querySelectorAll('#tab-bar button')[1].classList.add('text-blue-600');
             if(viewId === 'onboarding') document.querySelectorAll('#tab-bar button')[2].classList.add('text-blue-600');
         }
 
-        // ==========================================
-        // SCANNING LOGIC (MOCK OCR)
-        // ==========================================
-
         function handleScan(input, type) {
             if (input.files && input.files[0]) {
                 const card = document.getElementById(`card-${type}`);
                 const status = document.getElementById(`status-${type}`);
-                const inputContainer = document.getElementById(`input-${type}-container`);
-                
-                // 1. UI Loading State
                 card.classList.add('scanning', 'border-blue-400');
-                status.innerText = currentLang === 'en' ? "Scanning..." : "扫描中...";
+                status.innerText = "Scanning...";
                 status.classList.add('text-blue-500', 'animate-pulse');
 
-                // 2. Simulated Delay (1.5s)
                 setTimeout(() => {
                     card.classList.remove('scanning', 'border-blue-400');
                     card.classList.add('border-green-500', 'bg-green-50/50');
-                    
-                    status.innerText = currentLang === 'en' ? "Scan Complete" : "扫描完成";
+                    status.innerText = "Scan Complete";
                     status.classList.remove('text-blue-500', 'animate-pulse');
                     status.classList.add('text-green-600', 'font-bold');
-
-                    // 3. Mock Data Result
-                    if(inputContainer) inputContainer.classList.remove('hidden');
+                    
+                    document.getElementById(`input-${type}-container`).classList.remove('hidden');
                     const today = new Date();
                     
                     if (type === 'passport') {
                         document.getElementById('val-nationality').value = "United States";
-                        document.getElementById('val-passport').value = "P987654321";
-                        state.nationality = "USA";
-                        showToast(currentLang === 'en' ? "Found: United States" : "识别国籍：美国");
+                        document.getElementById('val-passport').value = "P" + Math.floor(Math.random()*1000000);
+                        state.nationality = "United States";
                     } else if (type === 'visa') {
                         const d = new Date(today.setDate(today.getDate() + 120));
                         document.getElementById('date-visa').value = d.toISOString().split('T')[0];
-                        showToast(currentLang === 'en' ? "Expiry detected" : "有效期已识别");
                     } else {
                         const d = new Date(today.setDate(today.getDate() + 24));
                         document.getElementById('date-report').value = d.toISOString().split('T')[0];
                     }
-
                 }, 1500);
             }
         }
 
         function saveProfile() {
-            const vDate = document.getElementById('date-visa').value;
-            const rDate = document.getElementById('date-report').value;
-            const phone = document.getElementById('phone-number').value;
-            const nat = document.getElementById('val-nationality').value;
-            const pass = document.getElementById('val-passport').value;
-
-            // In production, this would POST to database
-            state.visaDate = vDate;
-            state.reportDate = rDate;
-            state.phone = phone;
-            state.nationality = nat;
-            state.passportNo = pass;
-
+            state.visaDate = document.getElementById('date-visa').value;
+            state.reportDate = document.getElementById('date-report').value;
+            state.phone = document.getElementById('phone-number').value;
+            state.nationality = document.getElementById('val-nationality').value;
+            state.passportNo = document.getElementById('val-passport').value;
             localStorage.setItem('tvr_data', JSON.stringify(state));
             
-            // Add self to admin table mock
-            mockUsers.unshift({
-                name: "You (Demo)",
-                nationality: nat || "Unknown",
-                expiry: vDate || "N/A",
-                status: "Active"
-            });
-            renderAdminTable();
-
-            showToast(currentLang === 'en' ? "Service Activated!" : "管家服务已激活！");
-            
-            setTimeout(() => {
-                navigateTo('dashboard');
-            }, 1000);
+            if(state.nationality) {
+                mockUsers.unshift({ name: "You", nationality: state.nationality, expiry: state.visaDate, status: "Active" });
+                renderAdminTable();
+            }
+            showToast("Service Activated!");
+            setTimeout(() => navigateTo('dashboard'), 1000);
         }
 
-        // ==========================================
-        // SERVICES & DASHBOARD
-        // ==========================================
-
         function updateDashboardUI() {
-            if (!state.reportDate && !state.visaDate) return;
-
             const getDays = (dateStr) => {
                 if(!dateStr) return '--';
                 const diff = new Date(dateStr) - new Date();
                 return Math.ceil(diff / (1000 * 60 * 60 * 24));
             };
-
             if (state.reportDate) {
                 const days = getDays(state.reportDate);
                 document.getElementById('dash-report-days').innerText = `${days} ${translations[currentLang].days}`;
                 document.getElementById('dash-report-date').innerText = `Due: ${state.reportDate}`;
             }
-
             if (state.visaDate) {
                 const days = getDays(state.visaDate);
                 document.getElementById('dash-visa-days').innerText = days;
@@ -860,101 +777,88 @@
             }
         }
 
-        function openServiceModal(type) {
-            // This would open a form or trigger a Line Intent
-            // For now, we simulate a request sent to Admin
-            showToast(currentLang === 'en' ? "Opening Service Request..." : "正在发起服务申请...");
+        // Service Modal Logic
+        let currentService = null;
+        function openServiceModal(serviceName) {
+            currentService = serviceName;
+            document.getElementById('modal-service-name').innerText = serviceName;
+            if(state.phone) document.getElementById('modal-phone').value = state.phone;
+            
+            const modal = document.getElementById('service-modal');
+            const content = document.getElementById('service-modal-content');
+            modal.classList.remove('hidden');
             setTimeout(() => {
-                showToast(currentLang === 'en' ? "Request Sent to Admin!" : "申请已发送给管理员！");
-            }, 1000);
+                content.classList.remove('modal-enter');
+                content.classList.add('modal-active');
+            }, 10);
         }
 
-        // ==========================================
-        // ADMIN & I18N
-        // ==========================================
+        function closeServiceModal() {
+            const modal = document.getElementById('service-modal');
+            const content = document.getElementById('service-modal-content');
+            content.classList.remove('modal-active');
+            content.classList.add('modal-enter');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function submitServiceRequest() {
+            const name = document.getElementById('modal-name').value;
+            const phone = document.getElementById('modal-phone').value;
+            if(!name || !phone) {
+                alert("Please fill in your name and phone.");
+                return;
+            }
+            closeServiceModal();
+            showToast(`Request sent for ${currentService}!`);
+        }
 
         function toggleAdmin() {
-            const pin = prompt("Admin PIN (Demo: 8888)");
-            if (pin === "8888") {
-                navigateTo('admin');
-            }
+            if (prompt("Admin PIN") === "8888") navigateTo('admin');
         }
 
         function renderAdminTable() {
-            const tbody = document.getElementById('user-table-body');
-            tbody.innerHTML = mockUsers.map(u => `
+            document.getElementById('stat-total').innerText = mockUsers.length + 1200;
+            document.getElementById('stat-risk').innerText = "42";
+            document.getElementById('stat-due').innerText = "12";
+            
+            document.getElementById('user-table-body').innerHTML = mockUsers.map(u => `
                 <tr class="hover:bg-gray-50 transition">
                     <td class="px-4 py-3 font-medium text-gray-900">${u.name}</td>
                     <td class="px-4 py-3 text-gray-500">${u.nationality}</td>
-                    <td class="px-4 py-3 text-gray-500">${u.expiry}</td>
-                    <td class="px-4 py-3">
-                        <span class="px-2 py-1 rounded-full text-xs font-bold ${u.status === 'Warning' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">
-                            ${u.status}
-                        </span>
-                    </td>
+                    <td class="px-4 py-3 text-gray-500">${u.expiry || 'N/A'}</td>
                 </tr>
             `).join('');
-            
-            document.getElementById('stat-total').innerText = mockUsers.length + 1240;
         }
 
         function fillTemplate(type) {
             const box = document.getElementById('broadcast-msg');
-            if (type === 'visa') {
-                box.value = currentLang === 'en' 
-                    ? "⚠️ Urgent: Your Visa expires in 30 days! Contact us for a hassle-free extension." 
-                    : "⚠️ 紧急：您的签证还有30天到期！回复我们，获取快速续签服务。";
-            } else if (type === 'bank') {
-                box.value = currentLang === 'en'
-                    ? "🏦 Need a Bank Account? We help foreigners open Bangkok Bank accounts without work permits."
-                    : "🏦 需要泰国银行卡？无工作证也能开立盘谷银行账户，点击咨询。";
-            } else {
-                box.value = currentLang === 'en'
-                    ? "🛡️ Special Offer: Health Insurance for expats starting at 5,000 THB/year."
-                    : "🛡️ 特别优惠：外籍人士医疗保险，每年仅需 5,000 泰铢起。";
-            }
+            if (type === 'visa') box.value = "⚠️ Your Visa expires soon! Tap here to extend securely.";
+            else if (type === 'bank') box.value = "🏦 Open a Bangkok Bank account today! No Work Permit needed.";
+            else box.value = "🛡️ Health Insurance for expats starting at 5,000 THB.";
         }
 
-        function sendBroadcast(event) {
-            event.preventDefault();
-            const btn = event.target.querySelector('button');
-            const originalText = btn.innerText;
-            
-            btn.innerText = "Sending...";
-            btn.classList.add('opacity-75');
-            
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.classList.remove('opacity-75');
-                showToast(`Sent to ${mockUsers.length} users via Line`);
-                event.target.reset();
-            }, 1500);
+        function sendBroadcast(e) {
+            e.preventDefault();
+            showToast(`Sent to ${mockUsers.length} users`);
+            e.target.reset();
         }
 
         function changeLanguage(lang) {
             currentLang = lang;
             localStorage.setItem('tvr_lang', lang);
-
-            // Update Buttons
-            document.getElementById('btn-en').className = lang === 'en' ? "text-[10px] font-bold px-3 py-1 bg-blue-600 rounded text-white shadow transition-all" : "text-[10px] font-medium px-3 py-1 text-blue-300 hover:text-white transition-all";
-            document.getElementById('btn-zh').className = lang === 'zh' ? "text-[10px] font-bold px-3 py-1 bg-blue-600 rounded text-white shadow transition-all" : "text-[10px] font-medium px-3 py-1 text-blue-300 hover:text-white transition-all";
-
-            // Update Text
+            document.getElementById('btn-en').className = lang === 'en' ? "text-[10px] font-bold px-3 py-1 bg-blue-600 rounded text-white shadow" : "text-[10px] font-medium px-3 py-1 text-blue-300";
+            document.getElementById('btn-zh').className = lang === 'zh' ? "text-[10px] font-bold px-3 py-1 bg-blue-600 rounded text-white shadow" : "text-[10px] font-medium px-3 py-1 text-blue-300";
+            
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (translations[lang][key]) {
-                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                        el.placeholder = translations[lang][key];
-                    } else {
-                        el.innerHTML = translations[lang][key];
-                    }
+                    if (el.tagName === 'INPUT') el.placeholder = translations[lang][key];
+                    else el.innerHTML = translations[lang][key];
                 }
             });
-            
-            // Re-render things that depend on lang
-            if(document.getElementById('view-dashboard').classList.contains('view-active')) {
-                updateDashboardUI();
-            }
+            updateDashboardUI();
         }
 
         function showToast(msg) {
